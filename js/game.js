@@ -42,13 +42,10 @@ var StartScreen = {
 };
 
 var TheGame = {
-    JUMP_FORCE:-12,
-    GRAVITY:0.4,
-    HOR_SPEED:0.6,
     AREA_WIDTH:394,
     AREA_HEIGHT:315,
     MAX_JUMP_HEIGHT:150,
-    TARGET_HEIGHT:-1000,
+    TARGET_HEIGHT:-1500,
 
     myVisual:null,
     viewportOffset:{x:0,y:0},
@@ -84,7 +81,7 @@ var TheGame = {
 
     clearGame: function () {
         for(var i=0;i<this.aActivePlatforms.length;i++){
-            this.aActivePlatforms[i].div.hide();
+            this.aActivePlatforms[i].hideMe();
             this.aPlatformsPool.push(this.aActivePlatforms[i]);
         }
         this.aActivePlatforms = [];
@@ -99,7 +96,6 @@ var TheGame = {
         this.bLeftIsPressed = false;
         this.bRightIsPressed = false;
 
-        //this.makeNewPlatform(this.TARGET_HEIGHT,"wideexit");
         this.makeNewPlatform(297,"wide");
         this.makeNewPlatform(Math.floor(this.AREA_HEIGHT*0.65), "normal");
         this.makeNewPlatform(Math.floor(this.AREA_HEIGHT*0.4), "normal");
@@ -107,25 +103,6 @@ var TheGame = {
         this.nNextPlatformY = -20;
 
         this.renderToScreen();
-    },
-
-    managePlatforms: function () {
-        var keepsies = [];
-        for(var i=0;i<this.aActivePlatforms.length;i++){
-            if(this.aActivePlatforms[i].worldpos.y - this.viewportOffset.y > this.AREA_HEIGHT){
-                this.aActivePlatforms[i].div.hide();
-                this.aPlatformsPool.push(this.aActivePlatforms[i]);
-            }else{
-                keepsies.push(this.aActivePlatforms[i]);
-            }
-        }
-
-        this.aActivePlatforms = keepsies;
-
-        if(this.viewportOffset.y < this.nNextPlatformY+20 && this.viewportOffset.y > this.TARGET_HEIGHT+75){
-            this.makeNewPlatform(this.nNextPlatformY, "normal");
-            this.nNextPlatformY = this.viewportOffset.y - Math.floor(((Math.random()*0.7)+0.3) * this.MAX_JUMP_HEIGHT);
-        }
     },
 
     makeNewPlatform: function(_y, _version) {
@@ -144,6 +121,25 @@ var TheGame = {
         pf.showMe();
 
         this.aActivePlatforms.push(pf);
+    },
+
+    managePlatforms: function () {
+        var keepsies = [];
+        for(var i=0;i<this.aActivePlatforms.length;i++){
+            if(this.aActivePlatforms[i].myWorldPos.y - this.viewportOffset.y > this.AREA_HEIGHT){
+                this.aActivePlatforms[i].hideMe();
+                this.aPlatformsPool.push(this.aActivePlatforms[i]);
+            }else{
+                keepsies.push(this.aActivePlatforms[i]);
+            }
+        }
+
+        this.aActivePlatforms = keepsies;
+
+        if(this.viewportOffset.y < this.nNextPlatformY+20 && this.viewportOffset.y > this.TARGET_HEIGHT+75){
+            this.makeNewPlatform(this.nNextPlatformY, "normal");
+            this.nNextPlatformY = this.viewportOffset.y - Math.floor(((Math.random()*0.7)+0.3) * this.MAX_JUMP_HEIGHT);
+        }
     },
 
     onKeyedDown: function (e) {
@@ -177,36 +173,19 @@ var TheGame = {
     checkForPlatformHit: function () {
         if(Jumper.dy > 0){
             for(var i=0;i<this.aActivePlatforms.length;i++){
-                if(Jumper.worldX > this.aActivePlatforms[i].worldpos.x){
-                    if(Jumper.worldX < this.aActivePlatforms[i].worldpos.x + this.aActivePlatforms[i].platformwidth){
-                        if(Jumper.worldY >= this.aActivePlatforms[i].worldpos.y){
-                            if(Jumper.worldY - Jumper.dy < this.aActivePlatforms[i].worldpos.y){
-                                Jumper.dy = this.JUMP_FORCE;
-                                Jumper.worldY = this.aActivePlatforms[i].worldpos.y;
-                                if(this.aActivePlatforms[i].worldpos.y == this.TARGET_HEIGHT){
-                                    //end
-                                }else{
-                                    //do jump sound
-                                }
-                            }
-                        }
-                    }
-                }
+                this.aActivePlatforms[i].checkJumper();
             }
         }
     },
 
     renderToScreen: function () {
         for(var i=0;i<this.aActivePlatforms.length;i++){
-            this.aActivePlatforms[i].div.css({
-                left: this.aActivePlatforms[i].worldpos.x - this.viewportOffset.x,
-                top: this.aActivePlatforms[i].worldpos.y - this.viewportOffset.y
-            });
+            this.aActivePlatforms[i].renderMe(this.viewportOffset.x, this.viewportOffset.y);
         }
 
-        Jumper.renderMe(Jumper.worldX - this.viewportOffset.x, Jumper.worldY - this.viewportOffset.y);
+        Jumper.renderMe(this.viewportOffset.x, this.viewportOffset.y);
 
-        if(Jumper.worldY - this.viewportOffset.y > this.AREA_HEIGHT+50){
+        if(Jumper.myWorldPos.y - this.viewportOffset.y > this.AREA_HEIGHT+50){
             this.gameOver();
         }
     },
@@ -226,7 +205,7 @@ var TheGame = {
 
     handleViewportOffset: function () {
         if(Jumper.dy < 0) {
-            var dif = this.AREA_HEIGHT *0.4 - (Jumper.worldY - this.viewportOffset.y);
+            var dif = this.AREA_HEIGHT *0.4 - (Jumper.myWorldPos.y - this.viewportOffset.y);
             if (dif > 0) {
                 dif*=1.2;
                 this.viewportOffset.y -= (dif*0.1);
@@ -249,15 +228,15 @@ var TheGame = {
 
 var Platform = function(_id) {
     this.myPlatformContainer = $('.js-platforms-container');
-    var htmlcode = `<div id='platform${_id}' class='platform platform--${_version}'></div>`;
+    var htmlcode = `<div id='platform${_id}' class='platform'></div>`;
     this.myPlatformContainer.append(htmlcode);
-    this.myDiv = $(`#platform${this.nPlatformIDCount}`);
+    this.myVisual = $(`#platform${_id}`);
     this.myWorldPos = {x:0,y:0};
 }
 
 Platform.prototype.setVersion = function (_version) {
     this.sMyVersion = _version;
-    if(_version != "normal"){
+    if(this.sMyVersion != "normal"){
         this.nPlatformwidth = 250;
         this.myWorldPos.x = (TheGame.AREA_WIDTH-268)*0.5;
     }else{
@@ -266,10 +245,10 @@ Platform.prototype.setVersion = function (_version) {
     }
 
 
-    this.myDiv.removeClass('--wide');
-    this.myDiv.removeClass('--normal');
+    this.myVisual.removeClass('--wide');
+    this.myVisual.removeClass('--normal');
 
-    this.myDiv.addClass(`--${this.sMyVersion}`);
+    this.myVisual.addClass(`--${this.sMyVersion}`);
 }
 
 Platform.prototype.setWorldPosY = function (_y) {
@@ -277,19 +256,41 @@ Platform.prototype.setWorldPosY = function (_y) {
 }
 
 Platform.prototype.showMe = function () {
-    this.myDiv.show();
+    this.myVisual.show();
+}
+
+Platform.prototype.hideMe = function () {
+    this.myVisual.hide();
+}
+
+Platform.prototype.renderMe = function (_viewPortOffsetX, _viewPortOffsetY) {
+    this.myVisual.css({
+        left:`${this.myWorldPos.x - _viewPortOffsetX}px`,
+        top:`${this.myWorldPos.y - _viewPortOffsetY}px`
+    });
 }
 
 Platform.prototype.checkJumper = function () {
-
+    if(Jumper.myWorldPos.x > this.myWorldPos.x){
+        if(Jumper.myWorldPos.x < this.myWorldPos.x + this.nPlatformwidth){
+            if(Jumper.myWorldPos.y >= this.myWorldPos.y){
+                if(Jumper.myWorldPos.y - Jumper.dy < this.myWorldPos.y){
+                    Jumper.jumpMe(this.myWorldPos.y);
+                }
+            }
+        }
+    }
 }
 
 var Jumper = {
+    JUMP_FORCE:-12,
+    GRAVITY:0.4,
+    HOR_SPEED:0.6,
+
     myVisual:null,
     dx:0,
     dy:0,
-    worldX:0,
-    worldY:0,
+    myWorldPos:{x:185,y:290},
     visualstate:"",
 
     init: function () {
@@ -299,36 +300,40 @@ var Jumper = {
     resetPlayer: function () {
         this.dx = 0;
         this.dy = 0;
-        this.worldX = 185;
-        this.worldY = 290;
+        this.myWorldPos = {x:185,y:290};
     },
 
-    renderMe: function (_x, _y) {
+    renderMe: function (_viewPortOffsetX, _viewPortOffsetY) {
         this.myVisual.css({
-            left:_x+"px",
-            top:_y+"px"
+            left:`${this.myWorldPos.x - _viewPortOffsetX}px`,
+            top:`${this.myWorldPos.y - _viewPortOffsetY}px`
         });
     },
 
+    jumpMe: function (_platformY) {
+        this.dy = this.JUMP_FORCE;
+        this.myWorldPos.y = _platformY;
+    },
+
     onUpdateMe: function () {
-        this.dy += TheGame.GRAVITY;
+        this.dy += this.GRAVITY;
         this.dx *=0.9;
 
 
         if (TheGame.bLeftIsPressed) {
-            this.dx -= TheGame.HOR_SPEED;
+            this.dx -= this.HOR_SPEED;
         }
         if (TheGame.bRightIsPressed) {
-            this.dx += TheGame.HOR_SPEED;
+            this.dx += this.HOR_SPEED;
         }
 
-        this.worldX += this.dx;
-        this.worldY += this.dy;
+        this.myWorldPos.x += this.dx;
+        this.myWorldPos.y += this.dy;
 
-        if(this.worldX < 0){
-            this.worldX = TheGame.AREA_WIDTH;
-        }else if(this.worldX > TheGame.AREA_WIDTH){
-            this.worldX = 0;
+        if(this.myWorldPos.x < 0){
+            this.myWorldPos.x = TheGame.AREA_WIDTH;
+        }else if(this.myWorldPos.x > TheGame.AREA_WIDTH){
+            this.myWorldPos.x = 0;
         }
     }
 };
