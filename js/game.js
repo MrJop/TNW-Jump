@@ -171,7 +171,7 @@ var TheGame = {
     },
 
     checkForPlatformHit: function () {
-        if(Jumper.dy > 0){
+        if(Jumper.isGoingDown()){
             for(var i=0;i<this.aActivePlatforms.length;i++){
                 this.aActivePlatforms[i].checkJumper();
             }
@@ -204,7 +204,7 @@ var TheGame = {
     },
 
     handleViewportOffset: function () {
-        if(Jumper.dy < 0) {
+        if(Jumper.isGoingUp()) {
             var dif = this.AREA_HEIGHT *0.4 - (Jumper.myWorldPos.y - this.viewportOffset.y);
             if (dif > 0) {
                 dif*=1.2;
@@ -274,7 +274,7 @@ Platform.prototype.checkJumper = function () {
     if(Jumper.myWorldPos.x > this.myWorldPos.x){
         if(Jumper.myWorldPos.x < this.myWorldPos.x + this.nPlatformwidth){
             if(Jumper.myWorldPos.y >= this.myWorldPos.y){
-                if(Jumper.myWorldPos.y - Jumper.dy < this.myWorldPos.y){
+                if(Jumper.myWorldPos.y - Jumper.mySpeed.dy < this.myWorldPos.y){
                     Jumper.jumpMe(this.myWorldPos.y);
                 }
             }
@@ -288,18 +288,16 @@ var Jumper = {
     HOR_SPEED:0.6,
 
     myVisual:null,
-    dx:0,
-    dy:0,
+    mySpeed:{dx:0,dy:0},
     myWorldPos:{x:185,y:290},
-    visualstate:"",
 
     init: function () {
         this.myVisual = $('#jumper');
     },
 
     resetPlayer: function () {
-        this.dx = 0;
-        this.dy = 0;
+        this.mySpeed.dx = 0;
+        this.mySpeed.dy = 0;
         this.myWorldPos = {x:185,y:290};
     },
 
@@ -311,24 +309,32 @@ var Jumper = {
     },
 
     jumpMe: function (_platformY) {
-        this.dy = this.JUMP_FORCE;
+        this.mySpeed.dy = this.JUMP_FORCE;
         this.myWorldPos.y = _platformY;
     },
 
+    isGoingDown: function () {
+        return this.mySpeed.dy > 0;
+    },
+
+    isGoingUp: function () {
+        return this.mySpeed.dy < 0;
+    },
+
     onUpdateMe: function () {
-        this.dy += this.GRAVITY;
-        this.dx *=0.9;
+        this.mySpeed.dy += this.GRAVITY;
+        this.mySpeed.dx *=0.9;
 
 
         if (TheGame.bLeftIsPressed) {
-            this.dx -= this.HOR_SPEED;
+            this.mySpeed.dx -= this.HOR_SPEED;
         }
         if (TheGame.bRightIsPressed) {
-            this.dx += this.HOR_SPEED;
+            this.mySpeed.dx += this.HOR_SPEED;
         }
 
-        this.myWorldPos.x += this.dx;
-        this.myWorldPos.y += this.dy;
+        this.myWorldPos.x += this.mySpeed.dx;
+        this.myWorldPos.y += this.mySpeed.dy;
 
         if(this.myWorldPos.x < 0){
             this.myWorldPos.x = TheGame.AREA_WIDTH;
