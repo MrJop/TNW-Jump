@@ -21,8 +21,8 @@ var StartScreen = {
     myStartButton:null,
 
     init: function () {
-        this.myVisual = $('#start-screen');
-        this.myStartButton = $('#start-screen .button');
+        this.myVisual = $('.js-start-screen');
+        this.myStartButton = $('.js-start-button');
     },
 
     showMe: function () {
@@ -60,7 +60,7 @@ var TheGame = {
     init: function () {
         Jumper.init();
 
-        this.myVisual = $('#the-game');
+        this.myVisual = $('.js-game-screen');
     },
 
     showMe: function() {
@@ -292,7 +292,7 @@ var Jumper = {
     myWorldPos:{x:185,y:290},
 
     init: function () {
-        this.myVisual = $('#jumper');
+        this.myVisual = $('.js-jumper');
     },
 
     resetPlayer: function () {

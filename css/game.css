@@ -39,11 +39,11 @@ body,html{
     display: none;
 }
 
-#start-screen {
+.game-screen.--start-screen {
     padding-top: 80px;
 }
 
-#start-screen h1 {
+.game-screen.--start-screen h1 {
     padding-bottom: 30px;
 }
 
@@ -57,7 +57,7 @@ body,html{
     display: inline-block;
 }
 
-#jumper {
+.jumper {
     background-color: white;
     width: 20px;
     height: 30px;
